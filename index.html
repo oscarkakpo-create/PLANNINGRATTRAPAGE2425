@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rattrapages MBA 2026 — CESAG Online</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 15px; line-height: 1.5; }
+        .container { max-width: 900px; margin: auto; }
+
+        .hero { background: #006B3F; border-radius: 16px; padding: 24px; margin-bottom: 20px; text-align: center; color: #fff; }
+        .hero-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #a7d4bc; margin: 0 0 6px; }
+        .hero-module { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+        .hero-classe { font-size: 12px; color: #a7d4bc; margin: 0 0 6px; }
+        .hero-date { font-size: 13px; color: #d4ece3; margin: 0 0 12px; }
+        .hero-cd { display: inline-block; background: #E87722; color: #fff; border-radius: 20px; padding: 6px 20px; font-size: 16px; font-weight: 700; }
+        .urgent-badge { display: inline-block; background: #c0392b; color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+
+        .controls { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 10px; }
+        .search-wrap { position: relative; }
+        .search-wrap input { width: 100%; padding: 10px 36px 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; transition: 0.2s; }
+        .search-wrap input:focus { border-color: #006B3F; }
+        .search-clear { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8; font-size: 16px; display: none; }
+        .filter-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .filter-label { font-size: 11px; color: #94a3b8; margin-right: 2px; }
+        .fbtn { padding: 5px 13px; border: 1.5px solid #e2e8f0; border-radius: 20px; background: #fff; color: #64748b; cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.2s; }
+        .fbtn:hover { border-color: #94a3b8; }
+        .fbtn.on  { background: #006B3F; color: #fff; border-color: #006B3F; }
+        .fbtn.on2 { background: #E87722; color: #fff; border-color: #E87722; }
+
+        .meta { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+
+        .tbl-wrap { background: #fff; border-radius: 12px; overflow-x: auto; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; min-width: 480px; }
+        th { background: #f8fafc; padding: 11px 14px; text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8; border-bottom: 1.5px solid #f1f5f9; cursor: pointer; user-select: none; }
+        th:hover { color: #475569; }
+        .sort-arrow { font-size: 9px; margin-left: 3px; opacity: 0.5; }
+        td { padding: 11px 14px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f8fafc; }
+        tr.past td { color: #94a3b8; }
+        tr.past .tag { opacity: 0.5; }
+
+        .tag { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+        .s9  { background: #dcfce7; color: #166534; }
+        .s10 { background: #dbeafe; color: #1e40af; }
+        .classe-cell { font-size: 12px; color: #64748b; }
+        .mod-cell { font-weight: 600; }
+        .date-cell { font-size: 13px; white-space: nowrap; }
+        .past-label { font-size: 10px; color: #cbd5e1; margin-left: 4px; }
+
+        .print-btn { margin-top: 14px; text-align: right; }
+        .print-btn button { border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 7px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600; }
+        .print-btn button:hover { background: #f1f5f9; }
+        .empty { text-align: center; padding: 30px; color: #94a3b8; font-size: 13px; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .controls, .print-btn { display: none; }
+            .hero, .tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        @media (max-width: 520px) {
+            .col-classe { display: none; }
+            td, th { padding: 8px 10px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="hero">
+        <p class="hero-label">Prochain rattrapage</p>
+        <p class="hero-module" id="hmod">Chargement…</p>
+        <p class="hero-classe" id="hclasse"></p>
+        <p class="hero-date" id="hdate"></p>
+        <span class="hero-cd" id="hcd">—</span>
+    </div>
+
+    <div class="controls">
+        <div class="search-wrap">
+            <input type="text" id="q" placeholder="Rechercher un module…" oninput="applyFilters()">
+            <span class="search-clear" id="clrBtn" onclick="clearSearch()">✕</span>
+        </div>
+        <div class="filter-row">
+            <span class="filter-label">Semestre</span>
+            <button class="fbtn sem-btn on" onclick="setSem('all',this)">Tous</button>
+            <button class="fbtn sem-btn" onclick="setSem('SEM 9',this)">SEM 9</button>
+            <button class="fbtn sem-btn" onclick="setSem('SEM 10',this)">SEM 10</button>
+        </div>
+        <div class="filter-row">
+            <span class="filter-label">Filière</span>
+            <button class="fbtn fil-btn on2" onclick="setFiliere('all',this)">Toutes</button>
+            <button class="fbtn fil-btn" onclick="setFiliere('AG',this)">MBA AG</button>
+            <button class="fbtn fil-btn" onclick="setFiliere('GP',this)">MBA GP</button>
+        </div>
+    </div>
+
+    <p class="meta" id="meta"></p>
+
+    <div class="tbl-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th onclick="sortBy(0)">Sem <span class="sort-arrow" id="sa0"></span></th>
+                    <th class="col-classe" onclick="sortBy(1)">Classe <span class="sort-arrow" id="sa1"></span></th>
+                    <th onclick="sortBy(2)">Module <span class="sort-arrow" id="sa2"></span></th>
+                    <th onclick="sortBy(3)">Date & Horaire <span class="sort-arrow" id="sa3">▲</span></th>
+                </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
+
+    <div class="print-btn">
+        <button onclick="window.print()">🖨 Imprimer / Exporter PDF</button>
+    </div>
+
+</div>
+
+<script>
+const exams = [
+    ["SEM 10","MBA AG-AD","Droit de la fonction publique","27/04/2026 | 17h-19h",new Date(2026,3,27,17,0)],
+    ["SEM 9","MBA GP-AD","Codes éthiques et déontologie","27/04/2026 | 19h30-21h30",new Date(2026,3,27,19,30)],
+    ["SEM 9","MBA GP-AD AUF","Codes éthiques","28/04/2026 | 17h-19h",new Date(2026,3,28,17,0)],
+    ["SEM 9","MBA AG-AD + AUF","Comptabilité","28/04/2026 | 19h30-21h30",new Date(2026,3,28,19,30)],
+    ["SEM 9","MBA AG-AD + AUF","Contrôle de gestion","29/04/2026 | 17h-19h",new Date(2026,3,29,17,0)],
+    ["SEM 9","MBA AG-AD + AUF","Contrôle interne","29/04/2026 | 19h30-21h30",new Date(2026,3,29,19,30)],
+    ["SEM 9","MBA AG-AD + AUF","Création d'entreprise","30/04/2026 | 17h-19h",new Date(2026,3,30,17,0)],
+    ["SEM 9","MBA AG-AD + AUF","Droit des affaires","30/04/2026 | 19h30-21h30",new Date(2026,3,30,19,30)],
+    ["SEM 9","MBA AG-AD + AUF","Environnement éco","05/05/2026 | 09h-11h",new Date(2026,4,5,9,0)],
+    ["SEM 9","MBA AG-AD + AUF","Fiscalité","05/05/2026 | 16h30-18h30",new Date(2026,4,5,16,30)],
+    ["SEM 9","MBA AG-AD + AUF","Gestion projets","06/05/2026 | 14h-16h",new Date(2026,4,6,14,0)],
+    ["SEM 9","MBA AG-AD + AUF","Management interculturel","06/05/2026 | 16h30-18h30",new Date(2026,4,6,16,30)],
+    ["SEM 9","MBA AG-AD + AUF","Management stratégique","07/05/2026 | 17h-19h",new Date(2026,4,7,17,0)],
+    ["SEM 9","MBA AG-AD + AUF","Marchés financiers","07/05/2026 | 19h30-21h30",new Date(2026,4,7,19,30)],
+    ["SEM 9","MBA AG-AD + AUF","Marketing","08/05/2026 | 17h-19h",new Date(2026,4,8,17,0)],
+    ["SEM 9","MBA AG-AD + AUF","Théorie des organisations","08/05/2026 | 19h30-21h30",new Date(2026,4,8,19,30)],
+    ["SEM 10","MBA AG-AD + AUF","Gestion des RH","09/05/2026 | 17h-19h",new Date(2026,4,9,17,0)],
+    ["SEM 10","MBA AG-AD + AUF","Anglais des affaires","09/05/2026 | 19h30-21h30",new Date(2026,4,9,19,30)],
+    ["SEM 10","MBA AG-AD + AUF","Dév. personnel","10/05/2026 | 17h-19h",new Date(2026,4,10,17,0)],
+    ["SEM 10","MBA AG-AD + AUF","Gestion financière","10/05/2026 | 19h30-21h30",new Date(2026,4,10,19,30)],
+    ["SEM 10","MBA AG-AD + AUF","Jeu d'entreprise","11/05/2026 | 17h-19h",new Date(2026,4,11,17,0)],
+    ["SEM 10","MBA AG-AD + AUF","Organisation & stratégie","11/05/2026 | 19h30-21h30",new Date(2026,4,11,19,30)],
+    ["SEM 10","MBA AG-AD + AUF","Systèmes d'info","12/05/2026 | 09h-11h",new Date(2026,4,12,9,0)],
+    ["SEM 9","MBA GP-AD + AUF","Analyse financière","12/05/2026 | 14h-16h",new Date(2026,4,12,14,0)],
+    ["SEM 9","MBA GP-AD + AUF","Analyse économique","12/05/2026 | 16h30-18h30",new Date(2026,4,12,16,30)],
+    ["SEM 9","MBA GP-AD + AUF","Méthodologie agile","13/05/2026 | 14h-16h",new Date(2026,4,13,14,0)],
+    ["SEM 9","MBA GP-AD + AUF","Aspects juridiques","13/05/2026 | 16h30-18h30",new Date(2026,4,13,16,30)],
+    ["SEM 9","MBA GP-AD + AUF","Enjeux du développement","13/05/2026 | 17h-19h",new Date(2026,4,13,17,0)],
+    ["SEM 9","MBA GP-AD + AUF","Environnement projet","13/05/2026 | 19h30-21h30",new Date(2026,4,13,19,30)],
+    ["SEM 9","MBA GP-AD + AUF","Impact env. et social","14/05/2026 | 17h-19h",new Date(2026,4,14,17,0)],
+    ["SEM 9","MBA GP-AD + AUF","Faisabilité projet","14/05/2026 | 19h30-21h30",new Date(2026,4,14,19,30)],
+    ["SEM 9","MBA GP-AD + AUF","Parties prenantes","15/05/2026 | 17h-19h",new Date(2026,4,15,17,0)],
+    ["SEM 9","MBA GP-AD + AUF","Intégration projets","15/05/2026 | 19h30-21h30",new Date(2026,4,15,19,30)],
+    ["SEM 9","MBA GP-AD + AUF","Logistique","16/05/2026 | 17h-19h",new Date(2026,4,16,17,0)],
+    ["SEM 9","MBA GP-AD + AUF","Management qualité","16/05/2026 | 19h30-21h30",new Date(2026,4,16,19,30)],
+    ["SEM 9","MBA GP-AD + AUF","Planification op.","17/05/2026 | 17h-19h",new Date(2026,4,17,17,0)],
+    ["SEM 9","MBA GP-AD + AUF","Partenariat public privé","17/05/2026 | 19h30-21h30",new Date(2026,4,17,19,30)],
+    ["SEM 9","MBA GP-AD + AUF","Passation marchés","18/05/2026 | 09h-11h",new Date(2026,4,18,9,0)],
+    ["SEM 9","MBA GP-AD + AUF","Planification strat.","18/05/2026 | 14h-16h",new Date(2026,4,18,14,0)],
+    ["SEM 9","MBA GP-AD + AUF","Admin publique","18/05/2026 | 16h30-18h30",new Date(2026,4,18,16,30)],
+    ["SEM 10","MBA GP-AD + AUF","Anglais de spé","19/05/2026 | 14h-16h",new Date(2026,4,19,14,0)],
+    ["SEM 10","MBA GP-AD + AUF","Audit de projet","19/05/2026 | 16h30-18h30",new Date(2026,4,19,16,30)],
+    ["SEM 10","MBA GP-AD + AUF","Gestion connaissances","20/05/2026 | 17h-19h",new Date(2026,4,20,17,0)],
+    ["SEM 10","MBA GP-AD + AUF","Evaluation d'impact","20/05/2026 | 19h30-21h30",new Date(2026,4,20,19,30)],
+    ["SEM 10","MBA GP-AD + AUF","Gestion des risques","21/05/2026 | 17h-19h",new Date(2026,4,21,17,0)],
+    ["SEM 10","MBA GP-AD + AUF","Risques transversaux","21/05/2026 | 19h30-21h30",new Date(2026,4,21,19,30)],
+    ["SEM 10","MBA GP-AD + AUF","Recherche qual.","22/05/2026 | 17h-19h",new Date(2026,4,22,17,0)],
+    ["SEM 10","MBA GP-AD + AUF","Recherche quant.","22/05/2026 | 19h30-21h30",new Date(2026,4,22,19,30)],
+    ["SEM 10","MBA GP-AD + AUF","Rédaction TFE","23/05/2026 | 17h-19h",new Date(2026,4,23,17,0)],
+    ["SEM 10","MBA GP-AD + AUF","Outils info.","23/05/2026 | 19h30-21h30",new Date(2026,4,23,19,30)],
+    ["SEM 10","MBA GP-AD + AUF","Suivi & éval.","24/05/2026 | 17h-19h",new Date(2026,4,24,17,0)],
+    ["SEM 10","MBA GP-AD + AUF","Design Thinking","24/05/2026 | 19h30-21h30",new Date(2026,4,24,19,30)]
+];
+
+function getFiliere(classe) {
+    if (classe.includes('AG')) return 'AG';
+    if (classe.includes('GP')) return 'GP';
+    return 'other';
+}
+
+let curSem = 'all', curFiliere = 'all', sortCol = 4, sortAsc = true;
+
+function setSem(v, btn) {
+    curSem = v;
+    document.querySelectorAll('.sem-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    applyFilters();
+}
+function setFiliere(v, btn) {
+    curFiliere = v;
+    document.querySelectorAll('.fil-btn').forEach(b => b.classList.remove('on2'));
+    btn.classList.add('on2');
+    applyFilters();
+}
+function clearSearch() {
+    document.getElementById('q').value = '';
+    document.getElementById('clrBtn').style.display = 'none';
+    applyFilters();
+}
+
+function applyFilters() {
+    const q = document.getElementById('q').value.toLowerCase();
+    document.getElementById('clrBtn').style.display = q ? 'block' : 'none';
+    let data = exams.filter(e => {
+        const mSem = curSem === 'all' || e[0] === curSem;
+        const mFil = curFiliere === 'all' || getFiliere(e[1]) === curFiliere;
+        const mQ   = !q || e[2].toLowerCase().includes(q);
+        return mSem && mFil && mQ;
+    });
+    data = data.slice().sort((a, b) => {
+        let av = sortCol === 4 ? a[4] : a[sortCol];
+        let bv = sortCol === 4 ? b[4] : b[sortCol];
+        if (typeof av === 'string') av = av.toLowerCase();
+        if (typeof bv === 'string') bv = bv.toLowerCase();
+        return sortAsc ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
+    });
+    const now = new Date();
+    const H48 = 48 * 3600 * 1000;
+    const body = document.getElementById('tbody');
+    body.innerHTML = '';
+    if (!data.length) {
+        body.innerHTML = '<tr><td colspan="4" class="empty">Aucun résultat trouvé</td></tr>';
+        document.getElementById('meta').textContent = '0 module trouvé';
+        return;
+    }
+    document.getElementById('meta').textContent = data.length + ' module' + (data.length > 1 ? 's' : '') + ' trouvé' + (data.length > 1 ? 's' : '');
+    data.forEach(e => {
+        const past   = e[4] < now;
+        const urgent = !past && (e[4] - now) < H48;
+        const tr = document.createElement('tr');
+        if (past) tr.className = 'past';
+        tr.innerHTML = `
+            <td><span class="tag ${e[0]==='SEM 9'?'s9':'s10'}">${e[0]}</span></td>
+            <td class="classe-cell col-classe">${e[1]}</td>
+            <td class="mod-cell">${e[2]}${urgent?'<span class="urgent-badge">Urgent</span>':''}</td>
+            <td class="date-cell">${e[3]}${past?'<span class="past-label">(passé)</span>':''}</td>
+        `;
+        body.appendChild(tr);
+    });
+}
+
+function sortBy(col) {
+    const realCol = col === 3 ? 4 : col;
+    sortAsc = sortCol === realCol ? !sortAsc : true;
+    sortCol = realCol;
+    ['sa0','sa1','sa2','sa3'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = ''; });
+    const el = document.getElementById('sa' + col);
+    if (el) el.textContent = sortAsc ? '▲' : '▼';
+    applyFilters();
+}
+
+function initHero() {
+    const now = new Date();
+    const next = exams.filter(e => e[4] > now).sort((a, b) => a[4] - b[4])[0];
+    if (!next) {
+        document.getElementById('hmod').textContent = 'Tous les examens sont terminés';
+        document.getElementById('hcd').style.display = 'none';
+        return;
+    }
+    document.getElementById('hmod').textContent = next[2];
+    document.getElementById('hclasse').textContent = next[1];
+    document.getElementById('hdate').textContent = next[3];
+    function tick() {
+        const diff = next[4] - new Date();
+        if (diff <= 0) { location.reload(); return; }
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('hcd').textContent = d+'j '+h+'h '+m+'m '+s+'s';
+    }
+    setInterval(tick, 1000);
+    tick();
+}
+
+applyFilters();
+initHero();
+</script>
+</body>
+</html>
