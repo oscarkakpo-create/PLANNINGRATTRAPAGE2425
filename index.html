@@ -50,9 +50,11 @@
         .date-cell { font-size: 13px; white-space: nowrap; }
         .past-label { font-size: 10px; color: #cbd5e1; margin-left: 4px; }
 
-        .print-btn { margin-top: 14px; text-align: right; }
+        .print-btn { margin-top: 14px; text-align: right; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
         .print-btn button { border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 7px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600; }
         .print-btn button:hover { background: #f1f5f9; }
+        .print-btn .export-btn { background: #006B3F; color: #fff; border-color: #006B3F; }
+        .print-btn .export-btn:hover { background: #0a8453; }
         .empty { text-align: center; padding: 30px; color: #94a3b8; font-size: 13px; }
 
         @media print {
@@ -113,6 +115,8 @@
     </div>
 
     <div class="print-btn">
+        <button class="export-btn" onclick="downloadExcel()">📊 Export Excel</button>
+        <button class="export-btn" onclick="downloadICS()">📅 Télécharger ICS</button>
         <button onclick="window.print()">🖨 Imprimer / Exporter PDF</button>
     </div>
 
@@ -120,6 +124,7 @@
 
 <script>
 const exams = [
+    ["SEM 9","MBA AG-AD + AUF","Comptabilité","30/04/2026 | 18h00 GMT",new Date(2026,3,30,18,0)],
     ["SEM 9","MBA AG-AD","Contrôle interne","30/04/2026 | 18h00 GMT",new Date(2026,3,30,18,0)],
     ["SEM 9","MBA AG-AD","Marchés financiers","30/04/2026 | 18h00 GMT",new Date(2026,3,30,18,0)],
     ["SEM 9","MBA AG-AD AUF","Marchés financiers","30/04/2026 | 18h00 GMT",new Date(2026,3,30,18,0)],
@@ -249,6 +254,83 @@ function sortBy(col) {
     const el = document.getElementById('sa' + col);
     if (el) el.textContent = sortAsc ? '▲' : '▼';
     applyFilters();
+}
+
+function toICSDateUTC(date) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return date.getUTCFullYear()
+        + pad(date.getUTCMonth() + 1)
+        + pad(date.getUTCDate()) + 'T'
+        + pad(date.getUTCHours())
+        + pad(date.getUTCMinutes())
+        + pad(date.getUTCSeconds()) + 'Z';
+}
+
+function escapeICS(value) {
+    return value
+        .replace(/\\/g, '\\\\')
+        .replace(/;/g, '\\;')
+        .replace(/,/g, '\\,')
+        .replace(/\n/g, '\\n');
+}
+
+function downloadICS() {
+    const nowStamp = toICSDateUTC(new Date());
+    const events = exams.map((e, idx) => {
+        const start = new Date(e[4]);
+        const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+        const uid = `rattrapage-${idx}-${start.getTime()}@cesag-online`;
+        const summary = `${e[2]} (${e[0]} - ${e[1]})`;
+        const description = `Rattrapage MBA 2026\\nSemestre: ${e[0]}\\nProgramme: ${e[1]}\\nModule: ${e[2]}\\nHoraire: ${e[3]}`;
+        return [
+            'BEGIN:VEVENT',
+            `UID:${uid}`,
+            `DTSTAMP:${nowStamp}`,
+            `DTSTART:${toICSDateUTC(start)}`,
+            `DTEND:${toICSDateUTC(end)}`,
+            `SUMMARY:${escapeICS(summary)}`,
+            `DESCRIPTION:${escapeICS(description)}`,
+            'END:VEVENT'
+        ].join('\r\n');
+    }).join('\r\n');
+
+    const ics = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//CESAG Online//Rattrapages MBA 2026//FR',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        events,
+        'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rattrapages-mba-2026.ics';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+function downloadExcel() {
+    const header = ['Semestre', 'Programme', 'Module', 'Date & Horaire (GMT)'];
+    const rows = exams.map(e => [e[0], e[1], e[2], e[3]]);
+    const csv = [header, ...rows]
+        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+        .join('\r\n');
+
+    const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'rattrapages-mba-2026.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
 }
 
 function initHero() {
